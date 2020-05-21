@@ -4,33 +4,36 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Security;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.bouncycastle.jcajce.provider.asymmetric.edec.BCEdDSAPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.edec.BCEdDSAPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.encoders.Hex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import dev.jlibra.KeyUtils;
+import dev.jlibra.AccountAddress;
+import dev.jlibra.AuthenticationKey;
+import dev.jlibra.serialization.ByteArray;
 
 public class GenerateKeysExample {
 
-    private static final Logger logger = LogManager.getLogger(GenerateKeysExample.class);
+    private static final Logger logger = LoggerFactory.getLogger(GenerateKeysExample.class);
 
     public static void main(String[] args) throws Exception {
         Security.addProvider(new BouncyCastleProvider());
 
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Ed25519", "BC");
-
         KeyPair keyPair = kpGen.generateKeyPair();
 
         BCEdDSAPrivateKey privateKey = (BCEdDSAPrivateKey) keyPair.getPrivate();
 
         BCEdDSAPublicKey publicKey = (BCEdDSAPublicKey) keyPair.getPublic();
 
-        logger.info("Libra address: {}", KeyUtils.toHexStringLibraAddress(publicKey.getEncoded()));
-        logger.info("Public key: {}", Hex.toHexString(publicKey.getEncoded()));
-        logger.info("Private key: {}", Hex.toHexString(privateKey.getEncoded()));
+        AuthenticationKey authenticationKey = AuthenticationKey.fromPublicKey(publicKey);
+        logger.info("Libra address: {}",
+                AccountAddress.fromAuthenticationKey(authenticationKey));
+        logger.info("Authentication key: {}", authenticationKey);
+        logger.info("Public key: {}", ByteArray.from(publicKey.getEncoded()));
+        logger.info("Private key: {}", ByteArray.from(privateKey.getEncoded()));
     }
 
 }

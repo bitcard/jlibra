@@ -1,46 +1,26 @@
 package dev.jlibra.example;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.bouncycastle.util.encoders.Hex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import dev.jlibra.admissioncontrol.AdmissionControl;
-import dev.jlibra.admissioncontrol.query.ImmutableGetAccountTransactionBySequenceNumber;
-import dev.jlibra.admissioncontrol.query.ImmutableQuery;
-import dev.jlibra.admissioncontrol.query.UpdateToLatestLedgerResult;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
+import dev.jlibra.AccountAddress;
+import dev.jlibra.client.LibraClient;
+import dev.jlibra.client.views.Transaction;
 
 public class GetAccountTransactionBySequenceNumberExample {
 
-    private static final Logger logger = LogManager.getLogger(GetAccountTransactionBySequenceNumberExample.class);
+    private static final Logger logger = LoggerFactory.getLogger(GetAccountTransactionBySequenceNumberExample.class);
 
     public static void main(String[] args) {
-        String address = "6674633c78e2e00c69fd6e027aa6d1db2abc2a6c80d78a3e129eaf33dd49ce1c";
-        int sequenceNumber = 3;
+        String address = "2ab3189806488e73014e2e429e45c143";
+        int sequenceNumber = 0;
 
-        ManagedChannel channel = ManagedChannelBuilder.forAddress("ac.testnet.libra.org", 8000)
-                .usePlaintext()
+        LibraClient client = LibraClient.builder()
+                .withUrl("http://client.testnet.libra.org/")
                 .build();
 
-        AdmissionControl admissionControl = new AdmissionControl(channel);
+        Transaction t = client.getAccountTransaction(AccountAddress.fromHexString(address), sequenceNumber, true);
 
-        UpdateToLatestLedgerResult result = admissionControl.updateToLatestLedger(ImmutableQuery.builder()
-                .addAccountTransactionBySequenceNumberQueries(
-                        ImmutableGetAccountTransactionBySequenceNumber.builder()
-                                .accountAddress(Hex.decode(address))
-                                .sequenceNumber(sequenceNumber)
-                                .build())
-                .build());
-
-        result.getAccountTransactionsBySequenceNumber().forEach(tx -> {
-            tx.getEvents()
-                    .forEach(e -> logger.info("{}: Sequence number: {}, Amount: {}",
-                            Hex.toHexString(e.getAccountAddress()), e.getSequenceNumber(), e.getAmount()));
-        });
-
-        channel.shutdown();
-
+        logger.info("Transaction: {}", t);
     }
-
 }

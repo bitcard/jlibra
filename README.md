@@ -1,15 +1,11 @@
 # JLibra
-[![CircleCI](https://circleci.com/gh/ketola/jlibra.svg?style=svg)](https://circleci.com/gh/ketola/jlibra)
+[![GitHub Actions - Build](https://github.com/ketola/jlibra/workflows/Build/badge.svg)](https://github.com/ketola/jlibra/actions?query=workflow%3ABuild)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/dd682f23555c48aca137eb4c657d9497)](https://www.codacy.com/app/ketola/jlibra?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ketola/jlibra&amp;utm_campaign=Badge_Grade)
+[![Known Vulnerabilities](https://snyk.io/test/github/ketola/jlibra/badge.svg?targetFile=jlibra-core%2Fpom.xml)](https://snyk.io/test/github/ketola/jlibra?targetFile=jlibra-core%2Fpom.xml)
  
 A Java library for building applications on [Libra](https://libra.org/)
 
-![Overview](docs/img/jlibra.png)
-
-## Motivation
-The API for creating transactions and querying the database of Libra uses [gRPC](https://grpc.io/) - a high performance remote procedure call system utilizing [HTTP/2](https://developers.google.com/web/fundamentals/performance/http2/) for transport and [Protocol Buffers](https://developers.google.com/protocol-buffers/) for data serialization. 
-
-gRPC is designed to be usable from several platforms, but using the gRPC api directly from an application would not be optimal and would result in lots of boiler plate code - and that's where JLibra shows it's power for Java application developers.
+The API for creating transactions and querying the database of Libra uses [json-rpc](https://www.jsonrpc.org/specification) - a simple remote procedure call protocol utilizing JSON for encoding data. Sending new transactions to the Libra network requires also another type of serialization - the Libra Canonical Serialization. JLibra implements both of these and provides a simple api for Java applications to integrate to Libra.
 
 JLibra simplifies integration to Libra but does not hide any features of the Libra api, this makes it possible to implement anything supported by Libra with Java. 
 
@@ -33,13 +29,20 @@ Start sample Main classes in `dev.jlibra.example` package for examples (for a co
 
 [`GetAccountTransactionBySequenceNumberExample`](jlibra-examples/src/main/java/dev/jlibra/example/GetAccountTransactionBySequenceNumberExample.java)
 
+[`GetEventsByEventKeyExample`](jlibra-examples/src/main/java/dev/jlibra/example/GetEventsByEventKeyExample.java)
+
+[`GetTransactionsExample`](jlibra-examples/src/main/java/dev/jlibra/example/GetTransactionsExample.java)
+
 [`ImportAccountMnemonicExample`](jlibra-examples/src/main/java/dev/jlibra/example/ImportAccountMnemonicExample.java)
+
+[`KeyRotationExample`](jlibra-examples/src/main/java/dev/jlibra/example/KeyRotationExample.java)
 
 [`MintExample`](jlibra-examples/src/main/java/dev/jlibra/example/MintExample.java)
 
 [`TransferExample`](jlibra-examples/src/main/java/dev/jlibra/example/TransferExample.java)
 
-[`KeyRotationExample`](jlibra-examples/src/main/java/dev/jlibra/example/KeyRotationExample.java)
+[`TransferWithMetadataExample`](jlibra-examples/src/main/java/dev/jlibra/example/TransferWithMetadataExample.java)
+
 
 ## Use JLibra in your project
 
@@ -50,13 +53,13 @@ Maven:
 <dependency>
   <groupId>dev.jlibra</groupId>
   <artifactId>jlibra-core</artifactId>
-  <version>0.4.0</version>
+  <version>0.9.0</version>
 </dependency>
 ```
 
 Gradle:
 
-`compile("dev.jlibra:jlibra-core:0.4.0")`
+`compile("dev.jlibra:jlibra-core:0.9.0")`
 
 ## How-Tos & Step-by-Step Guides
 
@@ -66,15 +69,14 @@ How-Tos and Step-by-Step Guides are gathered in a [separate document](docs/HOWTO
 
 **Transaction is not executed, but without errors (no events, no transaction in librabrowser.io)**
 
-1.   The execution of the example main classes might terminate before the actual action is performed. 
- *   To prevent this, add `Thread.sleep(2000)` after the last statement of the example.   
-2.   You might have specified too few gas.  
+1.   You might have specified too few gas.  
  *   Try increasing `maxGasAmount`. 
    
 ### Contributors
 *   [ketola](https://github.com/ketola) (Sauli Ketola) 
 *   [ice09](https://github.com/ice09) (Alexander Culum)
 *   [hczerpak](https://github.com/hczerpak) (Hubert Czerpak)
+*   [zebei](https://github.com/zebei) (lizebei)
    
 ### Projects using JLibra
 *   [libra-message-signing](https://github.com/ice09/libra-message-signing) 

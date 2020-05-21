@@ -1,19 +1,20 @@
 package dev.jlibra.example;
 
-import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
+import dev.jlibra.AccountAddress;
+import dev.jlibra.AuthenticationKey;
+import dev.jlibra.client.LibraClient;
+import dev.jlibra.client.views.Account;
+import dev.jlibra.faucet.Faucet;
 
 /**
- * Calls the faucet service http endpoint with parameters address and amount (in
- * microLibras)
+ * Calls the faucet service http endpoint with parameters authentication key and
+ * amount (in microLibras)
  * 
  * If the request is successful, the service returns an id number and the minted
- * amount should be available for the address.
+ * amount should be available for the account.
  * 
  * This works only for the libra testnet, to mint in another (t. ex. local)
  * environment, you would need to create a mint transaction which requires
@@ -22,23 +23,21 @@ import kong.unirest.Unirest;
  */
 public class MintExample {
 
-    private static final Logger logger = LogManager.getLogger(MintExample.class);
+    private static final Logger logger = LoggerFactory.getLogger(MintExample.class);
 
-    public static void main(String[] args) throws IOException {
-        String toAddress = "1b2d1a2b57704043fa1f97fcc08e268f45d1c5b9f7b43c481941c103b99d8ca5";
-        long amountInMicroLibras = 10L * 1_000_000L;
+    public static void main(String[] args) {
+        AuthenticationKey authenticationKey = AuthenticationKey
+                .fromHexString("83114168d1c4912ddfac857421cdcfa54fa2be7ad55936c5702e8b7e3fdedb05");
 
-        HttpResponse<String> response = Unirest.post("http://faucet.testnet.libra.org")
-                .queryString("amount", amountInMicroLibras)
-                .queryString("address", toAddress)
-                .asString();
+        Faucet faucet = Faucet.builder().build();
+        faucet.mint(authenticationKey, 10L * 1_000_000L);
 
-        if (response.getStatus() != 200) {
-            throw new IllegalStateException(
-                    String.format("Error in minting %d Libra for address %s", amountInMicroLibras, toAddress));
-        }
+        LibraClient client = LibraClient.builder()
+                .withUrl("http://client.testnet.libra.org/")
+                .build();
 
-        logger.info(response.getBody());
+        Account account = client.getAccountState(AccountAddress.fromAuthenticationKey(authenticationKey));
+        logger.info("Balance: {} {}", account.balances().get(0).amount() / 1_000_000,
+                account.balances().get(0).currency());
     }
-
 }

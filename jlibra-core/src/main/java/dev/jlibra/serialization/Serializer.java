@@ -4,11 +4,13 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
-import dev.jlibra.admissioncontrol.transaction.TransactionArgument;
-
 public class Serializer {
+
+    private final static int MASK_DATA = 0x7f;
+    private final static int MASK_CONTINUE = 0x80;
 
     private byte[] bytes;
 
@@ -20,17 +22,17 @@ public class Serializer {
         return new Serializer(new byte[0]);
     }
 
-    public Serializer appendByteArray(byte[] byteArray) {
-        return append(intToByteArray(byteArray.length))
+    public Serializer append(ByteSequence byteSequence) {
+        return appendByteArray(byteSequence.toArray());
+    }
+
+    private Serializer appendByteArray(byte[] byteArray) {
+        return append(intToLeb128ByteArray(byteArray.length))
                 .append(byteArray);
     }
 
-    public Serializer appendTransactionArguments(List<TransactionArgument> transactionArguments) {
-        Serializer serializer = append(intToByteArray(transactionArguments.size()));
-        for (TransactionArgument arg : transactionArguments) {
-            serializer = serializer.append(arg.serialize());
-        }
-        return serializer;
+    public Serializer appendFixedLength(ByteSequence byteSequence) {
+        return append(byteSequence.toArray());
     }
 
     public Serializer appendString(String str) {
@@ -45,8 +47,22 @@ public class Serializer {
         return append(intToByteArray(i));
     }
 
-    public Serializer appendSerializable(LibraSerializable serializable) {
-        return append(serializable.serialize());
+    public Serializer appendIntAsLeb128(int i) {
+        return append(intToLeb128ByteArray(i));
+    }
+
+    public Serializer appendShort(short i) {
+        return append(shortToByteArray(i));
+    }
+
+    public Serializer appendByte(byte i) {
+        return append(new byte[] { i });
+    }
+
+    private static byte[] shortToByteArray(short i) {
+        return ByteBuffer.allocate(Short.BYTES)
+                .order(LITTLE_ENDIAN).putShort(i)
+                .order(LITTLE_ENDIAN).array();
     }
 
     private static byte[] intToByteArray(int i) {
@@ -61,6 +77,34 @@ public class Serializer {
                 .order(LITTLE_ENDIAN).array();
     }
 
+    /**
+     * The uleb 128 encoding is a way of efficiently storing integers. For an
+     * explanation, see: https://en.wikipedia.org/wiki/LEB128 Thanks to libosu
+     * project for the implementation used here:
+     * https://github.com/zcd/libosu/blob/master/src/main/java/com/zerocooldown/libosu/util/Uleb128.java
+     */
+    private static byte[] intToLeb128ByteArray(int i) {
+        if (i < 0) {
+            throw new IllegalArgumentException("The value to serialize cannot be negative");
+        }
+
+        List<Byte> bytes = new ArrayList<>();
+        do {
+            byte b = (byte) (i & MASK_DATA);
+            i >>= 7;
+            if (i != 0) {
+                b |= MASK_CONTINUE;
+            }
+            bytes.add(b);
+        } while (i != 0);
+
+        byte[] ret = new byte[bytes.size()];
+        for (int j = 0; j < bytes.size(); j++) {
+            ret[j] = bytes.get(j);
+        }
+        return ret;
+    }
+
     private Serializer append(byte[] b) {
         byte[] newBytes = new byte[bytes.length + b.length];
         System.arraycopy(bytes, 0, newBytes, 0, bytes.length);
@@ -68,14 +112,7 @@ public class Serializer {
         return new Serializer(newBytes);
     }
 
-    public byte[] toByteArray() {
-        return clone(bytes);
+    public ByteArray toByteArray() {
+        return ByteArray.from(bytes);
     }
-
-    private byte[] clone(byte[] array) {
-        byte[] clone = new byte[array.length];
-        System.arraycopy(array, 0, clone, 0, array.length);
-        return clone;
-    }
-
 }

@@ -2,50 +2,35 @@ package dev.jlibra.example;
 
 import java.math.BigDecimal;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.bouncycastle.util.encoders.Hex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import dev.jlibra.admissioncontrol.AdmissionControl;
-import dev.jlibra.admissioncontrol.query.ImmutableGetAccountState;
-import dev.jlibra.admissioncontrol.query.ImmutableQuery;
-import dev.jlibra.admissioncontrol.query.UpdateToLatestLedgerResult;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
+import dev.jlibra.AccountAddress;
+import dev.jlibra.client.LibraClient;
+import dev.jlibra.client.views.Account;
 
 public class GetAccountStateExample {
 
-    private static final Logger logger = LogManager.getLogger(GetAccountStateExample.class);
+    private static final Logger logger = LoggerFactory.getLogger(GetAccountStateExample.class);
 
-    public static void main(String[] args) {
-        String address = "8f5fbb9486acc5fb90f1a6be43a0013d4a7f7f06e3d5fe995be1e9b272c09b5d";
+    public static void main(String[] args) throws Exception {
+        String address = "2ab3189806488e73014e2e429e45c143";
 
-        ManagedChannel channel = ManagedChannelBuilder.forAddress("ac.testnet.libra.org", 8000)
-                .usePlaintext()
+        LibraClient client = LibraClient.builder()
+                .withUrl("http://client.testnet.libra.org/")
                 .build();
 
-        AdmissionControl admissionControl = new AdmissionControl(channel);
+        Account accountView = client.getAccountState(AccountAddress.fromHexString(address));
 
-        UpdateToLatestLedgerResult result = admissionControl
-                .updateToLatestLedger(ImmutableQuery.builder()
-                        .addAccountStateQueries(ImmutableGetAccountState.builder()
-                                .address(Hex.decode(address))
-                                .build())
-                        .build());
-
-        result.getAccountStates().forEach(accountState -> {
-            logger.info("Authentication key: {}", Hex.toHexString(accountState.getAuthenticationKey()));
-            logger.info("Received events: {}", accountState.getReceivedEvents().getCount());
-            logger.info("Sent events: {}", accountState.getSentEvents().getCount());
-            logger.info("Balance (microLibras): {}", accountState.getBalanceInMicroLibras());
-            logger.info("Balance (Libras): {}",
-                    new BigDecimal(accountState.getBalanceInMicroLibras()).divide(BigDecimal.valueOf(1000000)));
-            logger.info("Sequence number: {}", accountState.getSequenceNumber());
-            logger.info("Delegated withdrawal capability: {}", accountState.getDelegatedWithdrawalCapability());
-            logger.info("Delegated key rotation capability: {}", accountState.getDelegatedKeyRotationCapability());
-        });
-
-        channel.shutdown();
+        logger.info("Authentication key: {}", accountView.authenticationKey());
+        logger.info("Received events key: {}", accountView.receivedEventsKey());
+        logger.info("Sent events key: {}", accountView.sentEventsKey());
+        logger.info("Balance (micro): {}", accountView.balances().get(0).amount());
+        logger.info("Balance: {}", new BigDecimal(accountView.balances().get(0).amount())
+                .divide(BigDecimal.valueOf(1_000_000)));
+        logger.info("Currency: {}", accountView.balances().get(0).currency());
+        logger.info("Sequence number: {}", accountView.sequenceNumber());
+        logger.info("Delegated withdrawal capability: {}", accountView.delegatedWithdrawalCapability());
+        logger.info("Delegated key rotation capability: {}", accountView.delegatedKeyRotationCapability());
     }
-
 }

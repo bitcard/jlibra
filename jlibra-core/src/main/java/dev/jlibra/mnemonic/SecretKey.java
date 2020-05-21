@@ -1,28 +1,27 @@
 package dev.jlibra.mnemonic;
 
-import org.bouncycastle.util.encoders.Hex;
+import dev.jlibra.LibraRuntimeException;
+import dev.jlibra.serialization.ByteSequence;
 
-import javax.annotation.concurrent.Immutable;
-
-@Immutable
 public class SecretKey {
 
-    private final byte[] data;
+    private final ByteSequence byteSequence;
 
-    public SecretKey(byte[] data) {
+    public SecretKey(ByteSequence byteSequence) {
+        this.byteSequence = byteSequence;
+        byte[] data = byteSequence.toArray();
         if (data == null || data.length != 32) {
-            throw new RuntimeException("SecretKey requires 32 bytes but found " + (data == null ? 0 : data.length));
+            throw new LibraRuntimeException(
+                    "SecretKey requires 32 bytes but found " + (data == null ? 0 : data.length));
         }
-
-        this.data = data.clone();
     }
 
-    public byte[] getData() {
-        return data.clone();
+    public ByteSequence getByteSequence() {
+        return byteSequence;
     }
 
     @Override
     public String toString() {
-        return Hex.toHexString(data);
+        return byteSequence.toString();
     }
 }

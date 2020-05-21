@@ -1,14 +1,15 @@
 package dev.jlibra.mnemonic;
 
-import javax.annotation.concurrent.Immutable;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 
-@Immutable
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+
+import dev.jlibra.LibraRuntimeException;
+
 public class Seed {
 
     private static final String MNEMONIC_SALT_PREFIX = "LIBRA WALLET: mnemonic salt prefix$";
@@ -25,7 +26,7 @@ public class Seed {
 
             data = key.getEncoded();
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new RuntimeException(e.getMessage(), e);
+            throw new LibraRuntimeException(e.getMessage(), e);
         }
     }
 
